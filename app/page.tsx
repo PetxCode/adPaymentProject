@@ -1,113 +1,157 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+// import { imageUpload } from "@/utils/imageUpload";
+import { File } from "buffer";
+import { revalidateTag } from "next/cache";
+import { redirect } from "next/navigation";
+
+import React, { useContext, useState } from "react";
+import { GlobalContext } from "./global/GlobalProvider";
+
+const page = () => {
+  const {
+    setAmount,
+    amount,
+    setEmail,
+    setLink,
+    setTitle,
+    setImageURL,
+    setImageURLID,
+
+    link,
+    title,
+    imageURL,
+    imageURLID,
+  }: any = useContext(GlobalContext);
+  const [toggle, setToggle] = useState<boolean>(false);
+  const [state, setState] = useState<string>("");
+
+  const uploadAd = async (formData: FormData) => {
+    const title = formData.get("title") as string;
+    const link = formData.get("link") as string;
+    const amount = formData.get("amount") as string;
+    const email = formData.get("email") as string;
+
+    const image = formData.get("image") as File | null;
+
+    setAmount(amount);
+    setEmail(email);
+    setLink(link);
+    setTitle(title);
+    setImageURL(
+      "https://res.cloudinary.com/druv5bmxf/image/upload/v1724076566/kd49bqqhni8k35bby5hz.webp"
+    );
+    setImageURLID("imageNumber");
+
+    localStorage.setItem(
+      "payment",
+      JSON.stringify({
+        link,
+        title,
+        imageURL:
+          "https://res.cloudinary.com/druv5bmxf/image/upload/v1724076566/kd49bqqhni8k35bby5hz.webp",
+        imageURLID: "Number 2",
+      })
+    );
+
+    // const file = await image!.arrayBuffer();
+    // const buffer: Uint8Array = new Uint8Array(file);
+
+    const data = await fetch("http://localhost:3000/api/payment", {
+      method: "POST",
+      headers: {
+        "Content-Type": "Application/json",
+      },
+      body: JSON.stringify({
+        amount,
+        email,
+      }),
+    })
+      .then(async (res) => {
+        return await res.json();
+      })
+      .then(async (res: any) => {
+        setState(await res?.data?.data?.authorization_url);
+        return res?.data?.data?.authorization_url;
+      })
+      .then((res) => {
+        redirect(res);
+      })
+      .finally(() => {
+        setToggle(false);
+      });
+
+    // revalidateTag("images");
+
+    console.log("reading state", state);
+  };
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
+    <div>
+      {amount!}
+      <div className="mt-10">
+        <form action={uploadAd}>
+          <div className="flex flex-col mb-3">
+            <label className="text-[12px] font-semibold mb-1">Title</label>
+            <input
+              placeholder="Title"
+              className="h-[45px] w-[300px] border rounded-md pl-2"
+              name="title"
             />
-          </a>
-        </div>
+          </div>
+          <div className="flex flex-col mb-3">
+            <label className="text-[12px] font-semibold mb-1">Email</label>
+            <input
+              placeholder="Email"
+              className="h-[45px] w-[300px] border rounded-md pl-2"
+              name="email"
+            />
+          </div>
+          <div className="flex flex-col mb-3">
+            <label className="text-[12px] font-semibold mb-1">Amount</label>
+            <input
+              placeholder="Amount"
+              className="h-[45px] w-[300px] border rounded-md pl-2"
+              name="amount"
+            />
+          </div>
+          <div className="flex flex-col mb-3">
+            <label className="text-[12px] font-semibold mb-1">Link</label>
+            <input
+              placeholder="Link"
+              className="h-[45px] w-[300px] border rounded-md pl-2"
+              name="link"
+            />
+          </div>
+          <div className="flex flex-col mb-3">
+            <label
+              className="text-[12px] font-semibold mb-1 cursor-pointer"
+              htmlFor="image"
+            >
+              Image
+            </label>
+            <input
+              placeholder="Link"
+              className="h-[45px] w-[300px] border rounded-md pl-2 hidden"
+              name="image"
+              type="file"
+              accept="image/*"
+              id="image"
+            />
+          </div>
+
+          <button
+            className="bg- h-[45px] w-[300px] border rounded-md pl-2 bg-blue-950 text-white"
+            onClick={() => {
+              setToggle(true);
+            }}
+          >
+            {toggle ? "Loading..." : "Add to Add-List"}
+          </button>
+        </form>
       </div>
-
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    </div>
   );
-}
+};
+
+export default page;
